@@ -284,7 +284,7 @@ func prioritizeModelCandidates(candidates []modelCandidate, upstream string) []m
 	if family == "deepseek" && len(preferred) > 0 {
 		return preferred
 	}
-	if family == "glm" {
+	if family == "glm" && len(preferred) > 0 {
 		return preferred
 	}
 	return candidates
@@ -302,6 +302,13 @@ func modelFamily(upstream string) string {
 }
 
 func accountEligibleForModel(account Account, upstream string) bool {
+	// The synchronized upstream catalog is authoritative for this account.
+	// Keep legacy tier rules only for models absent from that catalog.
+	for _, model := range account.Models {
+		if model.DisplayModelName == upstream {
+			return model.PlanAvailable
+		}
+	}
 	if accountPlanTier(account) == "lite" && modelFamily(upstream) != "deepseek" {
 		return false
 	}
